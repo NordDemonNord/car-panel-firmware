@@ -1,0 +1,6 @@
+[submodule "stm32-cluster/external/CMSIS_6"]
+	path = stm32-cluster/external/CMSIS_6
+	url = https://github.com/ARM-software/CMSIS_6
+[submodule "stm32-cluster/external/cmsis_device_h7"]
+	path = stm32-cluster/external/cmsis_device_h7
+	url = https://github.com/STMicroelectronics/cmsis_device_h7
