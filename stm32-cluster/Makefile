@@ -13,8 +13,17 @@ CFLAGS = -I external/CMSIS_6/CMSIS/Core/Include \
 
 STARTUP_DIR = external/cmsis_device_h7/Source/Templates/gcc
 
+# list of files for linking
+OBJS = build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o
+
+# path to link script ( .ld  )
+LDSCRIPT = linker/stm32h743xx_flash.ld
+
+# flags for linking
+LDFLAGS = -mcpu=cortex-m7 -mthumb -T $(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+
 # default target: build every object file
-all: build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o
+all: build/cluster.elf
 
 # application code
 build/main.o: src/main.c
@@ -30,6 +39,11 @@ build/system_stm32h7xx.o: src/system_stm32h7xx.c
 build/startup_stm32h743xx.o: $(STARTUP_DIR)/startup_stm32h743xx.s
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
+
+
+# linking three object files into one .elf file
+build/cluster.elf: $(OBJS) $(LDSCRIPT)
+	$(CC) $(OBJS) $(LDFLAGS) -o $@
 
 clean:
 	rm -rf build
