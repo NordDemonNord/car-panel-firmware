@@ -2,33 +2,32 @@
     Name:    main.c
     Purpose: main loop of the STM32H743 instrument cluster
     Author:  Nord
+
+    Current state: turns on an external LED on PC11
+    (PC11 -> resistor -> LED -> GND, active-high).
 */
 
 #include "stm32h7xx.h"
 
 int main(void)
 {
-    /* 1. Enable the clock of the whole GPIOC port (bus AHB4).
-          Without a clock the port ignores every write. */
+    /* Enable GPIOC clock (AHB4). Without it the port ignores every write. */
     RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN;
 
-    /* 2. Make PC13 an output.
-          MODER has 2 bits per pin; pin 13 uses bits 27..26:
-            00 = input (reset value)
-            01 = general-purpose output   <- we need this
-            10 = alternate function
-            11 = analog
-          Step 2a: clear both bits -> 00 */
-    GPIOC->MODER &= ~GPIO_MODER_MODE13;
-    /*    Step 2b: set the lower bit -> 01 */
-    GPIOC->MODER |= GPIO_MODER_MODE13_0;
+    /* Dummy read: the port needs a few cycles after the clock is enabled
+       before it responds (STM32H7 errata ES0392). */
+    (void)RCC->AHB4ENR;
 
-    /* 3. Turn the LED on.
-          The LED on PC13 is most likely active-low (lit when the pin is 0),
-          so we drive the pin LOW. BSRR: writing 1 to BR13 resets PC13 to 0. */
-    GPIOC->BSRR = GPIO_BSRR_BR13;
+    /* PC11 -> general-purpose output (MODER11 = 01).
+       Port C resets to 11 (analog), so clear both bits before setting bit 0. */
+    GPIOC->MODER &= ~GPIO_MODER_MODER11;
+    GPIOC->MODER |= GPIO_MODER_MODER11_0;
 
-    /* 4. main() must never return on a microcontroller: there is no OS to return to. */
+    /* Drive PC11 high to light the LED. BSRR is a single write,
+       no read-modify-write. */
+    GPIOC->BSRR = GPIO_BSRR_BS11;
+
+    /* No OS to return to: main must never exit. */
     while (1)
     {
     }
