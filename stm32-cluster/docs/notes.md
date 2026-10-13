@@ -50,3 +50,28 @@ Not every field stores the value as-is. On the H743:
 
 Writing N instead of N - 1 does not hang anything; it silently shifts the
 frequency. Always read the field description before writing.
+
+## Writing a multi-bit field: clear, then shift the value in
+
+```c
+RCC->PLL1DIVR &= ~RCC_PLL1DIVR_N1_Msk;
+RCC->PLL1DIVR |=  (159UL << RCC_PLL1DIVR_N1_Pos);
+```
+
+- `_Msk` says where the field is; `_Pos` is the bit number where it starts.
+  `_Pos` is not a value — the value is shifted by it.
+- `|=` only sets bits, it never clears them. Without the clear, the reset
+  value leaks in: DIVM1 resets to 32, so `|= 5` gives 37.
+- A single bit needs one operation: `|=` to set, `&= ~` to clear.
+
+The rule does not apply to write-only registers (`BSRR`: plain `=`),
+write-1-to-clear flags (`rc_w1`: a read-modify-write clears other flags) and
+write-once registers (`PWR_CR3`, see above). The access type is printed above
+each bit in the reference manual.
+
+## CMSIS `_0.._N` suffixes are not consistent
+
+- `RCC_PLLCKSELR_DIVM1_5` is bit 5 of the field, i.e. value 32 — not 5.
+- `RCC_PLLCFGR_PLL1RGE_2` is the field value 2.
+
+Before using a suffixed macro, check its definition in `stm32h743xx.h`.

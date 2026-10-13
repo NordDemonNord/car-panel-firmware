@@ -72,7 +72,7 @@ Rejected UART candidates:
 
 | Function | Pin | Notes |
 |---|---|---|
-| User LED | PC13 | in the backup power domain: limited drive, should sink rather than source current — likely active-low |
+| User LED | PC11 | external LED, active-high. PC11 is also SDMMC1_D3 — move the LED if microSD is used later |
 | HSE | 25 MHz crystal | |
 | Debug | SWD (ST-Link) | ST-Link 3.3 V output not connected; board powered from USB so the 5V header pin is live |
 

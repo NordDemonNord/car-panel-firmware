@@ -63,7 +63,7 @@ drift apart.
 | USART2_TX (to Pi) | PD5 | → CP2102 RX |
 | USART2_RX (from Pi) | PD6 | ← CP2102 TX |
 | Debug UART | onboard USB-UART bridge | micro-USB "UART" on the board |
-| User LED | PC13 | |
+| User LED | PC11 | external LED, active-high (PC11 → resistor → LED → GND) |
 
 Pins were chosen to avoid the peripherals already wired on the board:
 FMC (SDRAM), LTDC (LCD connector), SDMMC1 (microSD) and USB. The rejected
@@ -84,17 +84,27 @@ Terminators enabled on both ends (CANable switch, HW-021 jumper) — about
 
 - `arm-none-eabi-gcc` — cross-compiler
 - CMSIS Core (Arm) and `cmsis_device_h7` (ST) — git submodules, pinned to tags
-- `stlink-tools` or OpenOCD — flashing
+- OpenOCD + ST-Link — flashing (`make flash`), also the GDB server
 - `gdb-multiarch` + VS Code Cortex-Debug with the STM32H743 SVD — debugging
 
-Build instructions will be added together with the build system.
+## Build and flash
+
+```
+git submodule update --init   # CMSIS headers
+cd stm32-cluster
+make          # build/cluster.elf
+make flash    # program over ST-Link (OpenOCD), verify, reset
+make clean
+```
 
 ## Status
 
 - [x] Hardware bring-up: pin assignment, CAN bus wiring and termination
 - [x] Raspberry Pi side: CP2102 driver in the image, loopback-tested
-- [ ] STM32: startup code and linker script, LED blink on HSI
-- [ ] STM32: SysTick, clock tree (HSE 25 MHz + PLL)
+- [x] STM32: startup code, linker script, Makefile, LED on PC11 (HSI)
+- [x] STM32: power (LDO, VOS1), HSE 25 MHz, PLL1 locked at 400 MHz
+- [ ] STM32: switch SYSCLK to PLL1 (flash wait states, bus prescalers)
+- [ ] STM32: SysTick
 - [ ] STM32: debug UART and UART link to the Raspberry Pi
 - [ ] STM32: FDCAN in internal loopback
 - [ ] PC + CANable → STM32 over CAN
