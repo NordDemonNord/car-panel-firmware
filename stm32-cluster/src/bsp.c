@@ -39,9 +39,20 @@ static void power_init(void)
 
     PWR->CR3 = cr3; /* Apply changes in one action */
 
+   
     /* wait until the supply reports the voltage is ready */
     while ( ( PWR->CSR1 & PWR_CSR1_ACTVOSRDY ) == 0 )
     {
     }    
+
+
+    PWR->D3CR |= PWR_D3CR_VOS_Msk; /* set 11 to VOS(VOS1), VOS1 to support 400 MHz */
+
+
+    /* wait until the supply reports the voltage mode is ready */
+    while ( ( PWR->D3CR & PWR_D3CR_VOSRDY ) == 0 )
+    {
+    }    
+
 
 }

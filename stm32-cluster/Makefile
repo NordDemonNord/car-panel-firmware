@@ -9,12 +9,13 @@ CC = arm-none-eabi-gcc
 CFLAGS = -I external/CMSIS_6/CMSIS/Core/Include \
 	-I external/cmsis_device_h7/Include \
 	-D STM32H743xx \
-	-mcpu=cortex-m7 -mthumb
+	-mcpu=cortex-m7 -mthumb \
+	-Wall -Wextra
 
 STARTUP_DIR = external/cmsis_device_h7/Source/Templates/gcc
 
 # list of files for linking
-OBJS = build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o
+OBJS = build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o build/bsp.o
 
 # path to link script ( .ld  )
 LDSCRIPT = linker/stm32h743xx_flash.ld
@@ -26,12 +27,17 @@ LDFLAGS = -mcpu=cortex-m7 -mthumb -T $(LDSCRIPT) --specs=nano.specs --specs=nosy
 all: build/cluster.elf
 
 # application code
-build/main.o: src/main.c
+build/main.o: src/main.c src/bsp.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # SystemInit(): basic chip setup, called by startup before main
 build/system_stm32h7xx.o: src/system_stm32h7xx.c
+	mkdir -p build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# BSP: power (LDO, VOS) and clocks
+build/bsp.o: src/bsp.c src/bsp.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -41,12 +47,15 @@ build/startup_stm32h743xx.o: $(STARTUP_DIR)/startup_stm32h743xx.s
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
-# linking three object files into one .elf file
+# linking object files into one .elf file
 build/cluster.elf: $(OBJS) $(LDSCRIPT)
 	$(CC) $(OBJS) $(LDFLAGS) -o $@
 
 clean:
 	rm -rf build
 
+flash: build/cluster.elf
+	openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c "program $< verify reset exit"
+
 # these names are actions, not files
-.PHONY: all clean
+.PHONY: all clean flash

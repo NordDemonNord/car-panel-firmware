@@ -8,9 +8,15 @@
 */
 
 #include "stm32h7xx.h"
+#include "bsp.h"
+
 
 int main(void)
+
 {
+
+   bsp_init(); /* bsp for HSE configuration */
+
     /* Enable GPIOC clock (AHB4). Without it the port ignores every write. */
     RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN;
 
