@@ -63,7 +63,7 @@ drift apart.
 | USART2_TX (to Pi) | PD5 | → CP2102 RX |
 | USART2_RX (from Pi) | PD6 | ← CP2102 TX |
 | Debug UART | onboard USB-UART bridge | micro-USB "UART" on the board |
-| User LED | PC13 | |
+| User LED | PC11 | external LED, active-high (PC11 → resistor → LED → GND) |
 
 Pins were chosen to avoid the peripherals already wired on the board:
 FMC (SDRAM), LTDC (LCD connector), SDMMC1 (microSD) and USB. The rejected
@@ -84,17 +84,48 @@ Terminators enabled on both ends (CANable switch, HW-021 jumper) — about
 
 - `arm-none-eabi-gcc` — cross-compiler
 - CMSIS Core (Arm) and `cmsis_device_h7` (ST) — git submodules, pinned to tags
-- `stlink-tools` or OpenOCD — flashing
+- OpenOCD + ST-Link — flashing (`make flash`), also the GDB server
 - `gdb-multiarch` + VS Code Cortex-Debug with the STM32H743 SVD — debugging
 
-Build instructions will be added together with the build system.
+## Build and flash
+
+```
+git submodule update --init   # CMSIS headers
+cd stm32-cluster
+make          # build/cluster.elf
+make flash    # program over ST-Link (OpenOCD), verify, reset
+make clean
+```
+
+## Debugging
+
+OpenOCD runs as a server: telnet on port 4444, GDB on port 3333.
+
+```
+# terminal 1
+openocd -f interface/stlink.cfg -f target/stm32h7x.cfg
+
+# terminal 2, from stm32-cluster/
+gdb-multiarch build/cluster.elf
+(gdb) target extended-remote localhost:3333
+(gdb) monitor reset halt
+(gdb) break sysclk_switch
+(gdb) continue
+```
+
+Map a raw PC value to a source line:
+`arm-none-eabi-addr2line -e build/cluster.elf <pc>`.
+Both need `-g` in `CFLAGS`; the debug info stays in the `.elf` and does not
+reach the flash.
 
 ## Status
 
 - [x] Hardware bring-up: pin assignment, CAN bus wiring and termination
 - [x] Raspberry Pi side: CP2102 driver in the image, loopback-tested
-- [ ] STM32: startup code and linker script, LED blink on HSI
-- [ ] STM32: SysTick, clock tree (HSE 25 MHz + PLL)
+- [x] STM32: startup code, linker script, Makefile, LED on PC11 (HSI)
+- [x] STM32: power (LDO, VOS1), HSE 25 MHz, PLL1 locked at 400 MHz
+- [x] STM32: SYSCLK on PLL1 — flash wait states, bus prescalers (AXI 200 MHz, APB 100 MHz)
+- [x] STM32: SysTick 1 ms delay (polling); clock verified — LED at 1 Hz, 10 blinks in 10 s
 - [ ] STM32: debug UART and UART link to the Raspberry Pi
 - [ ] STM32: FDCAN in internal loopback
 - [ ] PC + CANable → STM32 over CAN
