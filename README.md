@@ -97,14 +97,35 @@ make flash    # program over ST-Link (OpenOCD), verify, reset
 make clean
 ```
 
+## Debugging
+
+OpenOCD runs as a server: telnet on port 4444, GDB on port 3333.
+
+```
+# terminal 1
+openocd -f interface/stlink.cfg -f target/stm32h7x.cfg
+
+# terminal 2, from stm32-cluster/
+gdb-multiarch build/cluster.elf
+(gdb) target extended-remote localhost:3333
+(gdb) monitor reset halt
+(gdb) break sysclk_switch
+(gdb) continue
+```
+
+Map a raw PC value to a source line:
+`arm-none-eabi-addr2line -e build/cluster.elf <pc>`.
+Both need `-g` in `CFLAGS`; the debug info stays in the `.elf` and does not
+reach the flash.
+
 ## Status
 
 - [x] Hardware bring-up: pin assignment, CAN bus wiring and termination
 - [x] Raspberry Pi side: CP2102 driver in the image, loopback-tested
 - [x] STM32: startup code, linker script, Makefile, LED on PC11 (HSI)
 - [x] STM32: power (LDO, VOS1), HSE 25 MHz, PLL1 locked at 400 MHz
-- [ ] STM32: switch SYSCLK to PLL1 (flash wait states, bus prescalers)
-- [ ] STM32: SysTick
+- [x] STM32: SYSCLK on PLL1 — flash wait states, bus prescalers (AXI 200 MHz, APB 100 MHz)
+- [x] STM32: SysTick 1 ms delay (polling); clock verified — LED at 1 Hz, 10 blinks in 10 s
 - [ ] STM32: debug UART and UART link to the Raspberry Pi
 - [ ] STM32: FDCAN in internal loopback
 - [ ] PC + CANable → STM32 over CAN
