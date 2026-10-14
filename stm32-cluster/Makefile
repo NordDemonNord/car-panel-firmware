@@ -10,6 +10,7 @@ CFLAGS = -I external/CMSIS_6/CMSIS/Core/Include \
 	-I external/cmsis_device_h7/Include \
 	-D STM32H743xx \
 	-mcpu=cortex-m7 -mthumb \
+	-g \
 	-Wall -Wextra
 
 STARTUP_DIR = external/cmsis_device_h7/Source/Templates/gcc

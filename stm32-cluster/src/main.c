@@ -3,12 +3,15 @@
     Purpose: main loop of the STM32H743 instrument cluster
     Author:  Nord
 
-    Current state: turns on an external LED on PC11
+    Current state: blink LED on PC11 once per second
     (PC11 -> resistor -> LED -> GND, active-high).
 */
 
 #include "stm32h7xx.h"
 #include "bsp.h"
+#include <stdint.h>
+
+void delay_ms(uint32_t ms);
 
 
 int main(void)
@@ -17,24 +20,24 @@ int main(void)
 
    bsp_init(); /* bsp for HSE configuration */
 
-    /* Enable GPIOC clock (AHB4). Without it the port ignores every write. */
-    RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN;
+   /* Enable the GPIOC clock (AHB4): without it the port ignores every write */
+   RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN;
 
-    /* Dummy read: the port needs a few cycles after the clock is enabled
-       before it responds (STM32H7 errata ES0392). */
-    (void)RCC->AHB4ENR;
+   /* Dummy read: the port needs a few cycles after the clock is enabled
+      before it responds (STM32H7 errata ES0392) */
+   (void)RCC->AHB4ENR;
 
-    /* PC11 -> general-purpose output (MODER11 = 01).
-       Port C resets to 11 (analog), so clear both bits before setting bit 0. */
-    GPIOC->MODER &= ~GPIO_MODER_MODER11;
-    GPIOC->MODER |= GPIO_MODER_MODER11_0;
+   /* PC11 = general purpose output (MODER11 = 01).
+      Port C resets to 11 (analog), so clear both bits before setting */
+   GPIOC->MODER &= ~GPIO_MODER_MODER11;
+   GPIOC->MODER |= GPIO_MODER_MODER11_0;
 
-    /* Drive PC11 high to light the LED. BSRR is a single write,
-       no read-modify-write. */
-    GPIOC->BSRR = GPIO_BSRR_BS11;
+      while (1)
+   {
+      GPIOC->BSRR = GPIO_BSRR_BS11;   /* LED on */
+      delay_ms(500);
 
-    /* No OS to return to: main must never exit. */
-    while (1)
-    {
-    }
+      GPIOC->BSRR = GPIO_BSRR_BR11;   /* LED off */
+      delay_ms(500);
+   }
 }
