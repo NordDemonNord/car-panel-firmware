@@ -62,7 +62,8 @@ drift apart.
 | FDCAN2_RX | PB12 | ← HW-021 RX, FT pin |
 | USART2_TX (to Pi) | PD5 | → CP2102 RX |
 | USART2_RX (from Pi) | PD6 | ← CP2102 TX |
-| Debug UART | onboard USB-UART bridge | micro-USB "UART" on the board |
+| USART1_TX (debug console) | PA9 (AF7) | → CP2102 RX on the header, 115200 8N1 |
+| USART1_RX (debug console) | PA10 (AF7) | ← CP2102 TX |
 | User LED | PC11 | external LED, active-high (PC11 → resistor → LED → GND) |
 
 Pins were chosen to avoid the peripherals already wired on the board:
@@ -97,6 +98,17 @@ make flash    # program over ST-Link (OpenOCD), verify, reset
 make clean
 ```
 
+## Serial console
+
+USART1 is the debug console: 115200 8N1, through a CP2102 on `/dev/ttyUSB0`.
+
+```
+picocom -b 115200 /dev/ttyUSB0      # exit: Ctrl+A, Ctrl+X
+ls -l /dev/serial/by-id/            # which ttyUSB* is which adapter
+```
+
+The user needs to be in the `dialout` group for `/dev/ttyUSB*`.
+
 ## Debugging
 
 OpenOCD runs as a server: telnet on port 4444, GDB on port 3333.
@@ -113,6 +125,15 @@ gdb-multiarch build/cluster.elf
 (gdb) continue
 ```
 
+Quick register dump without an interactive session: run, stop after 2 s,
+print the registers. Wrap each command in `echo [...]`, otherwise `-c` mode
+prints nothing:
+
+```
+openocd -f interface/stlink.cfg -f target/stm32h7x.cfg \
+  -c "init; reset run; sleep 2000; halt; echo [mdw 0x40011000]; exit"
+```
+
 Map a raw PC value to a source line:
 `arm-none-eabi-addr2line -e build/cluster.elf <pc>`.
 Both need `-g` in `CFLAGS`; the debug info stays in the `.elf` and does not
@@ -126,7 +147,8 @@ reach the flash.
 - [x] STM32: power (LDO, VOS1), HSE 25 MHz, PLL1 locked at 400 MHz
 - [x] STM32: SYSCLK on PLL1 — flash wait states, bus prescalers (AXI 200 MHz, APB 100 MHz)
 - [x] STM32: SysTick 1 ms delay (polling); clock verified — LED at 1 Hz, 10 blinks in 10 s
-- [ ] STM32: debug UART and UART link to the Raspberry Pi
+- [x] STM32: debug console on USART1 (PA9, 115200, TX by polling) — verified in picocom, which also confirms APB2 = 100 MHz
+- [ ] STM32: UART link to the Raspberry Pi (USART2, PD5/PD6)
 - [ ] STM32: FDCAN in internal loopback
 - [ ] PC + CANable → STM32 over CAN
 - [ ] CAN message set and UART protocol in `common/`

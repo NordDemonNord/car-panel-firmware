@@ -14,7 +14,7 @@ candidate pin was checked against them before use:
 | LTDC → LCD connector | PB8/PB9 (B6/B7), PB10/PB11 (G4/G5), PA3 (B5), PH13/PH14 (G2/G3), … |
 | SDMMC1 → microSD | PC8–PC12, PD2 |
 | USB OTG | PA11/PA12 |
-| Onboard USB-UART bridge | PA9/PA10 (USART1, presumed) |
+| Onboard USB-UART bridge | PA9/PA10 (USART1, presumed) — also used as the debug console |
 
 ## CAN — FDCAN2
 
@@ -67,6 +67,20 @@ Rejected UART candidates:
 | PA2/PA3 (USART2) | PA3 = LCD_B5 |
 | PC10/PC11, PC12/PD2 (UART4/5) | SDMMC1 — microSD |
 | PE7/PE8, PE0/PE1 (UART7/8) | FMC — SDRAM |
+
+## Debug console — USART1
+
+| Signal | Pin | AF | Connects to |
+|---|---|---|---|
+| USART1_TX | PA9 | AF7 | CP2102 RX |
+| USART1_RX | PA10 | AF7 | CP2102 TX |
+
+Both pins are FT_u. AF numbers come from DS12110 Table 10 "Port A alternate
+functions" (column AF7 = SPI2/3/6, USART1/2/3/6, UART7, SDMMC1). TX output
+verified on the header pin with an external CP2102 at 115200 8N1.
+
+PA9 also carries OTG_FS_VBUS as an additional function. If TX ever goes
+silent, check the board schematic for a VBUS divider on PA9.
 
 ## Other
 

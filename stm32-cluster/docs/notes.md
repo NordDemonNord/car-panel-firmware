@@ -130,3 +130,59 @@ While the core still runs on HSI:
   means the core is inside an exception (3 = HardFault). An `msp` below
   `0x20000000` means a stack overflow.
 
+
+## Pin alternate functions: MODER + AFR
+
+A pin driven by a peripheral needs two settings:
+
+1. `MODER = 10` — the pin is controlled by a peripheral, not by `ODR`.
+2. `AFSELn` = the AF number — *which* peripheral. 4 bits per pin, so two
+   registers: `AFR[0]` (AFRL) for pins 0–7, `AFR[1]` (AFRH) for pins 8–15.
+
+The AF number is in the **datasheet** (DS12110, "Port x alternate functions"
+tables), not in the reference manual. PA9 → USART1_TX is AF7.
+
+Forget the AFR write and the pin stays on AF0: the peripheral works, but its
+signal never reaches the pin.
+
+Port A resets to `11` (analog) on most pins. Clearing only `_1` and then
+setting it leaves `11`. Clear the whole field with `_Msk`.
+
+## USART: baud rate
+
+`BRR = f_ck / baud` with `OVER8 = 0` (16 samples per bit).
+`f_ck` for USART1 is APB2 = 100 MHz, `USART_PRESC` resets to /1.
+
+100 000 000 / 115 200 = 868 → real rate 115 207 baud, error 0.006 %.
+Anything under about 2 % is fine. Write it as an expression so it follows
+the clock: `USART1->BRR = 100000000UL / 115200UL;`.
+
+The CMSIS `DIV_MANTISSA` / `DIV_FRACTION` split is a leftover from older
+STM32s. With `OVER8 = 0` the whole register is one number.
+
+`BRR` can only be written while `UE = 0`. The order from the reference manual
+("Character transmission procedure"): word length `M` → `BRR` → `UE = 1` →
+`TE = 1` → write `TDR`.
+
+## USART: sending a byte
+
+- `TXE` (`USART_ISR_TXE_TXFNF`) = 1 → `TDR` is empty, a new byte can go in.
+- `TC` = 1 → everything has left the wire, stop bit included. Only needed
+  before switching the USART off.
+- Write `TDR` with `=`, never `|=`: it is a data register, a read-modify-write
+  mixes the old byte into the new one.
+- `'A'` is one character (65). `"A"` is a string: an address in memory.
+
+## UART wiring
+
+TX is an output, RX is an input, so the wires cross: STM TX → adapter RX.
+TX → TX connects two outputs and nothing is received. If nothing arrives,
+swap the two wires first: it costs nothing at 3.3 V.
+
+Isolating a silent link without a scope:
+
+1. Adapter loopback: short its TX and RX, type in picocom. Characters come
+   back → adapter, port and terminal are fine (picocom has local echo off).
+2. MCU registers via OpenOCD: GPIOA `MODER`/`AFRH`, USART1 `CR1`/`BRR`/`ISR`.
+   `TC = 1` in `ISR` proves the byte has left the USART, so the fault is on
+   the wire side.
