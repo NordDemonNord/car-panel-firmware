@@ -17,7 +17,7 @@ STARTUP_DIR = external/cmsis_device_h7/Source/Templates/gcc
 
 # list of files for linking
 OBJS = 	build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o build/bsp.o \
-	build/slcan.o build/usart1.o
+	build/slcan.o build/usart1.o build/usart2.o
 
 # path to link script ( .ld  )
 LDSCRIPT = linker/stm32h743xx_flash.ld
@@ -25,11 +25,11 @@ LDSCRIPT = linker/stm32h743xx_flash.ld
 # flags for linking
 LDFLAGS = -mcpu=cortex-m7 -mthumb -T $(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
 
-# default target: build every object file
+# default target: the linked firmware
 all: build/cluster.elf
 
 # application code
-build/main.o: src/main.c src/bsp.h src/slcan.h src/usart1.h
+build/main.o: src/main.c src/bsp.h src/slcan.h src/usart1.h src/usart2.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -43,13 +43,18 @@ build/bsp.o: src/bsp.c src/bsp.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# slcan: build slcan frame
+# SLCAN frame builder (no hardware access)
 build/slcan.o: src/slcan.c src/slcan.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# usart1: transmit slcan frame over usart1
+# USART1: debug console
 build/usart1.o: src/usart1.c src/usart1.h
+	mkdir -p build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# USART2: link to the Raspberry Pi
+build/usart2.o: src/usart2.c src/usart2.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 

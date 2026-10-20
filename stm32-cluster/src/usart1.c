@@ -1,6 +1,6 @@
 /*
     Name: usart1.c
-    Purpose: init usart1 and transmit slcan frames to Pi through it
+    Purpose: USART1 debug console (TX only, polling)
     Author: Nord
 */
 
