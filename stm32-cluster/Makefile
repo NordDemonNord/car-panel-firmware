@@ -6,17 +6,18 @@ CC = arm-none-eabi-gcc
 # -I  device headers: H743 register addresses and bit masks
 # -D  picks the chip inside stm32h7xx.h
 # -mcpu/-mthumb  target core and instruction set
-CFLAGS = -I external/CMSIS_6/CMSIS/Core/Include \
-	-I external/cmsis_device_h7/Include \
-	-D STM32H743xx \
-	-mcpu=cortex-m7 -mthumb \
-	-g \
-	-Wall -Wextra
+CFLAGS = 	-I external/CMSIS_6/CMSIS/Core/Include \
+		-I external/cmsis_device_h7/Include \
+		-D STM32H743xx \
+		-mcpu=cortex-m7 -mthumb \
+		-g \
+		-Wall -Wextra
 
 STARTUP_DIR = external/cmsis_device_h7/Source/Templates/gcc
 
 # list of files for linking
-OBJS = build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o build/bsp.o
+OBJS = 	build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o build/bsp.o \
+	build/slcan.o build/usart1.o
 
 # path to link script ( .ld  )
 LDSCRIPT = linker/stm32h743xx_flash.ld
@@ -28,7 +29,7 @@ LDFLAGS = -mcpu=cortex-m7 -mthumb -T $(LDSCRIPT) --specs=nano.specs --specs=nosy
 all: build/cluster.elf
 
 # application code
-build/main.o: src/main.c src/bsp.h
+build/main.o: src/main.c src/bsp.h src/slcan.h src/usart1.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -39,6 +40,16 @@ build/system_stm32h7xx.o: src/system_stm32h7xx.c
 
 # BSP: power (LDO, VOS) and clocks
 build/bsp.o: src/bsp.c src/bsp.h
+	mkdir -p build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# slcan: build slcan frame
+build/slcan.o: src/slcan.c src/slcan.h
+	mkdir -p build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# usart1: transmit slcan frame over usart1
+build/usart1.o: src/usart1.c src/usart1.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
