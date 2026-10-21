@@ -53,6 +53,8 @@ TXD (its input), transceiver RXD (its output) → MCU RX.
 
 UART wiring **is crossed**. Common GND; the adapter is set to 3.3 V logic and
 its VCC pin is left unconnected (the board is powered from its own USB).
+TX verified at 115200 8N1 (SLCAN frames). USART2 sits on APB1 (100 MHz), the pins
+use AF7, and PD5/PD6 are configured through `AFRL` (pins 0–7).
 
 PD5 doubles as FMC_NWE, which SDRAM does not use. PD6 doubles as LCD_B2 —
 unused in RGB565, but used if the LCD connector is wired for 24 bit.

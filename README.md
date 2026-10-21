@@ -98,16 +98,43 @@ make flash    # program over ST-Link (OpenOCD), verify, reset
 make clean
 ```
 
-## Serial console
+## Serial ports
 
-USART1 is the debug console: 115200 8N1, through a CP2102 on `/dev/ttyUSB0`.
+| Port | Pins | Role |
+|---|---|---|
+| USART1 | PA9 / PA10 | debug console, 115200 8N1 |
+| USART2 | PD5 / PD6 | link to the Raspberry Pi: SLCAN frames, 115200 8N1 |
 
 ```
-picocom -b 115200 /dev/ttyUSB0      # exit: Ctrl+A, Ctrl+X
-ls -l /dev/serial/by-id/            # which ttyUSB* is which adapter
+picocom -b 115200 /dev/ttyUSB0                  # debug console; exit: Ctrl+A, Ctrl+X
+picocom -b 115200 --imap crcrlf /dev/ttyUSB0    # SLCAN link: frames end with \r only
+ls -l /dev/serial/by-id/                        # which ttyUSB* is which adapter
 ```
 
+Without `--imap crcrlf` every SLCAN frame overwrites the previous one on the same
+line.
 The user needs to be in the `dialout` group for `/dev/ttyUSB*`.
+
+## SLCAN link to the Raspberry Pi
+
+The STM32 sends CAN frames as SLCAN text: `t` + 3 hex digits of the standard ID +
+DLC + data bytes in hex + `\r`. On Linux, `slcand` turns the serial port into a
+SocketCAN interface, so the receiving side sees ordinary CAN:
+
+```
+sudo slcand -o -c -s6 -S 115200 /dev/ttyUSB0 can0   # -S: UART baud rate
+sudo ip link set can0 up
+candump can0                                         # can0  1A0   [2]  2E E0
+```
+
+| Frame | ID | DLC | Signal |
+|---|---|---|---|
+| Vehicle speed | `0x1A0` | 2 | `uint16`, 0.01 km/h per bit, offset 0, Motorola (high byte first) |
+
+Example: 120 km/h → 12000 → `0x2EE0` → `t1A022EE0\r`.
+
+Current test firmware sends the speed frame every 500 ms, toggling 120 / 60 km/h.
+The frame layout moves to `common/` once a second node uses it.
 
 ## Debugging
 
@@ -148,8 +175,8 @@ reach the flash.
 - [x] STM32: SYSCLK on PLL1 — flash wait states, bus prescalers (AXI 200 MHz, APB 100 MHz)
 - [x] STM32: SysTick 1 ms delay (polling); clock verified — LED at 1 Hz, 10 blinks in 10 s
 - [x] STM32: debug console on USART1 (PA9, 115200, TX by polling) — verified in picocom, which also confirms APB2 = 100 MHz
-- [ ] STM32: UART link to the Raspberry Pi (USART2, PD5/PD6)
+- [x] STM32: UART link to the Raspberry Pi (USART2, PD5/PD6) — SLCAN speed frames, received on `can0` via `slcand` on the PC and on the Pi
 - [ ] STM32: FDCAN in internal loopback
 - [ ] PC + CANable → STM32 over CAN
-- [ ] CAN message set and UART protocol in `common/`
+- [ ] CAN message set in `common/` (first frame defined: speed, ID 0x1A0)
 - [ ] ESP32 CAN signal simulator
