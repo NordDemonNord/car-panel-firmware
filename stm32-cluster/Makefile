@@ -17,7 +17,7 @@ STARTUP_DIR = external/cmsis_device_h7/Source/Templates/gcc
 
 # list of files for linking
 OBJS = 	build/main.o build/system_stm32h7xx.o build/startup_stm32h743xx.o build/bsp.o \
-	build/slcan.o build/usart1.o build/usart2.o
+	build/slcan.o build/usart1.o build/usart2.o build/fdcan2.o
 
 # path to link script ( .ld  )
 LDSCRIPT = linker/stm32h743xx_flash.ld
@@ -29,7 +29,7 @@ LDFLAGS = -mcpu=cortex-m7 -mthumb -T $(LDSCRIPT) --specs=nano.specs --specs=nosy
 all: build/cluster.elf
 
 # application code
-build/main.o: src/main.c src/bsp.h src/slcan.h src/usart1.h src/usart2.h
+build/main.o: src/main.c src/bsp.h src/slcan.h src/usart1.h src/usart2.h src/fdcan2.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -55,6 +55,11 @@ build/usart1.o: src/usart1.c src/usart1.h
 
 # USART2: link to the Raspberry Pi
 build/usart2.o: src/usart2.c src/usart2.h
+	mkdir -p build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# FDCAN2: link to PC
+build/fdcan2.o: src/fdcan2.c src/fdcan2.h
 	mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
