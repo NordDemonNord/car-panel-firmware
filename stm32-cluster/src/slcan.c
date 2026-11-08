@@ -17,8 +17,8 @@ static void byte_to_hex( uint8_t value, char *out )
 
 {
 
-    out[0] = HEX_DIGITS[ ( value >> 4 ) & 0x0F ];
-    out[1] = HEX_DIGITS[ value          & 0x0F ];
+    out[0] = HEX_DIGITS[    ( value >> 4 )   & 0x0F ];
+    out[1] = HEX_DIGITS[      value          & 0x0F ];
 
 }
 

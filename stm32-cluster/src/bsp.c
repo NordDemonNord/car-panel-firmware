@@ -18,8 +18,8 @@
 #define TICKS_PER_MS    ( CORE_CLOCK_HZ / 1000UL )   /* 400 000 ticks in 1 ms */
 
 
-
-static void power_init(void); /* prototypes: lets bsp_init sit at the top */
+/* prototypes */
+static void power_init(void);       
 static void hse_init(void); 
 static void pll_init(void);
 static void flash_init(void);
