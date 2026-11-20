@@ -14,6 +14,7 @@
 */
 
 #include <stdint.h>
+#include "wifi_ap.h"
 #include "can_tx.h"
 
 #include "freertos/FreeRTOS.h"
@@ -31,6 +32,8 @@ uint8_t speed_buff[2];          /* DATA */
 void app_main( void )
 
 {
+
+    wifi_init();
 
     twai_init();
 
